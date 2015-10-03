@@ -9,10 +9,15 @@ func init() {
 	SetApplicationName("store_test")
 }
 
+type Cat struct {
+	Name string
+	Big  bool
+}
+
 type Settings struct {
-	Age  int
-	Cats []string
-	Pi   float64
+	Age          int
+	Cats         []Cat
+	RandomString string
 }
 
 func equal(a, b Settings) bool {
@@ -20,7 +25,7 @@ func equal(a, b Settings) bool {
 		return false
 	}
 
-	if a.Pi != b.Pi {
+	if a.RandomString != b.RandomString {
 		return false
 	}
 
@@ -39,12 +44,16 @@ func equal(a, b Settings) bool {
 
 func TestSaveLoad(t *testing.T) {
 	settings := Settings{
-		Age:  42,
-		Cats: []string{"cat1", "cat2", "cat3"},
-		Pi:   3.1415,
+		Age: 42,
+		Cats: []Cat{
+			Cat{"Rudolph", true},
+			Cat{"Patrick", false},
+			Cat{"Jeremy", true},
+		},
+		RandomString: "gophers are gonna conquer the world",
 	}
 
-	settingsFile := "preferences.toml"
+	settingsFile := "path/to/preferences.toml"
 
 	err := Save(settingsFile, &settings)
 	if err != nil {

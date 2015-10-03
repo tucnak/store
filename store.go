@@ -74,6 +74,9 @@ func Load(path string, v interface{}) error {
 }
 
 // Save writes a configuration from `path` and puts it into `v` pointer.
+//
+// Path is a full filename, with extension. Since Store currently support
+// TOML and JSON only, passing others would result in a corresponding error.
 func Save(path string, v interface{}) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
