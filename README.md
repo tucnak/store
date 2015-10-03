@@ -54,4 +54,4 @@ func main() {
 }
 ```
 
-Store also supports a variety of handy features, find them out with [godoc](https://godoc.org/github.com/tucnak/store).
+Read [godoc](https://godoc.org/github.com/tucnak/store) to get more familiar.
