@@ -73,7 +73,7 @@ func Load(path string, v interface{}) error {
 	return nil
 }
 
-// Save writes a configuration from `path` and puts it into `v` pointer.
+// Save puts a configuration from `v` pointer into a file `path`. 
 //
 // Path is a full filename, with extension. Since Store currently support
 // TOML and JSON only, passing others would result in a corresponding error.
