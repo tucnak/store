@@ -129,10 +129,10 @@ func buildPlatformPath(path string) string {
 	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
 		unixConfigDir = xdg
 	} else {
-		unixConfigDir = os.Getenv("HOME")
+		unixConfigDir = os.Getenv("HOME") + "/.config"
 	}
 
-	return fmt.Sprintf("%s/.config/%s/%s", unixConfigDir,
+	return fmt.Sprintf("%s/%s/%s", unixConfigDir,
 		applicationName,
 		path)
 }
