@@ -29,8 +29,8 @@ type Settings struct {
 }
 
 func init() {
-	// By default, Store puts all your config data to $HOME/.config/<appname>
-	// on *nix systems and to %APPDATA%/<appname> on Windows.
+	// By default, Store puts all your config data to %APPDATA%/<appname>
+	// on Windows and to $XDG_CONFIG_HOME or $HOME on *unix systems.
 	//
 	// Warning: Store would panic on any sensitive calls if it's not set.
 	store.SetApplicationName("joecockerfanclub")
