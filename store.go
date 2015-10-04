@@ -18,8 +18,8 @@ var applicationName string
 
 // SetApplicationName defines a unique application handle for file system.
 //
-// By default, Store puts all your config data to $HOME/.config/<appname>
-// on *nix systems and to %APPDATA%/<appname> on Windows.
+// By default, Store puts all your config data to %APPDATA%/<appname> on Windows
+// and to $XDG_CONFIG_HOME or $HOME on *unix systems.
 //
 // Warning: Store would panic on any sensitive calls if it's not set.
 func SetApplicationName(handle string) {
@@ -38,7 +38,7 @@ func Load(path string, v interface{}) error {
 		panic("store: application name not defined")
 	}
 
-	globalPath := buildPath(path)
+	globalPath := buildPlatformPath(path)
 
 	data, err := ioutil.ReadFile(globalPath)
 
@@ -73,7 +73,7 @@ func Load(path string, v interface{}) error {
 	return nil
 }
 
-// Save puts a configuration from `v` pointer into a file `path`. 
+// Save puts a configuration from `v` pointer into a file `path`.
 //
 // Path is a full filename, with extension. Since Store currently support
 // TOML and JSON only, passing others would result in a corresponding error.
@@ -105,7 +105,7 @@ func Save(path string, v interface{}) error {
 		return &stringError{"unknown configuration format"}
 	}
 
-	globalPath := buildPath(path)
+	globalPath := buildPlatformPath(path)
 	if err := os.MkdirAll(filepath.Dir(globalPath), os.ModePerm); err != nil {
 		return err
 	}
@@ -118,14 +118,21 @@ func Save(path string, v interface{}) error {
 }
 
 // buildPlatformPath builds a platform-dependent path for relative path given.
-func buildPath(path string) string {
+func buildPlatformPath(path string) string {
 	if runtime.GOOS == "windows" {
 		return fmt.Sprintf("%s\\%s\\%s", os.Getenv("APPDATA"),
 			applicationName,
 			path)
 	}
 
-	return fmt.Sprintf("%s/.config/%s/%s", os.Getenv("HOME"),
+	var unixConfigDir string
+	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		unixConfigDir = xdg
+	} else {
+		unixConfigDir = os.Getenv("HOME")
+	}
+
+	return fmt.Sprintf("%s/.config/%s/%s", unixConfigDir,
 		applicationName,
 		path)
 }

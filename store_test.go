@@ -61,7 +61,7 @@ func TestSaveLoad(t *testing.T) {
 		return
 	}
 
-	defer os.Remove(buildPath(settingsFile))
+	defer os.Remove(buildPlatformPath(settingsFile))
 
 	var newSettings Settings
 
