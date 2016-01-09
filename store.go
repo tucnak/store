@@ -67,7 +67,7 @@ func Load(path string, v interface{}) error {
 			return err
 		}
 	} else {
-		return &stringError{"unknown configuration format"}
+		return fmt.Errorf("store: unknown configuration format")
 	}
 
 	return nil
@@ -82,35 +82,33 @@ func Save(path string, v interface{}) error {
 		panic("store: application name not defined")
 	}
 
-	var data []byte
+	var b bytes.Buffer
 
 	if strings.HasSuffix(path, ".toml") {
-		var b bytes.Buffer
-
 		encoder := toml.NewEncoder(&b)
 		if err := encoder.Encode(v); err != nil {
 			return nil
 		}
 
-		data = b.Bytes()
 	} else if strings.HasSuffix(path, ".json") {
 		fileData, err := json.Marshal(v)
-
 		if err != nil {
 			return err
 		}
 
-		data = fileData
+		b.Write(fileData)
 	} else {
-		return &stringError{"unknown configuration format"}
+		return fmt.Errorf("unknown configuration format")
 	}
+
+	b.WriteRune('\n')
 
 	globalPath := buildPlatformPath(path)
 	if err := os.MkdirAll(filepath.Dir(globalPath), os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := ioutil.WriteFile(globalPath, data, os.ModePerm); err != nil {
+	if err := ioutil.WriteFile(globalPath, b.Bytes(), os.ModePerm); err != nil {
 		return err
 	}
 

@@ -3,7 +3,7 @@
 
 [![GoDoc](https://godoc.org/github.com/tucnak/store?status.svg)](https://godoc.org/github.com/tucnak/store)
 
-I didn't like existing configuration management solution, like [globalconf](https://github.com/rakyll/globalconf), [tachyon](https://github.com/vektra/tachyon) or [viper](https://github.com/spf13/viper). First two just don't feel right and viper, imo, a little overcomplicated—definitely too much for small projects.
+I didn't like existing configuration management solutions like [globalconf](https://github.com/rakyll/globalconf), [tachyon](https://github.com/vektra/tachyon) or [viper](https://github.com/spf13/viper). First two just don't feel right and viper, imo, a little overcomplicated—definitely too much for small projects.
 
 Store currenty supports JSON and TOML and I am not planning to add support for other file formats soon.
 
