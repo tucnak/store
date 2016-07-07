@@ -11,9 +11,10 @@ Look, when I say it's dead simple, I actually mean it:
 package main
 
 import (
-	"github.com/tucnak/store"
 	"log"
-	"os"
+	"time"
+
+	"github.com/tucnak/store"
 )
 
 func init() {
@@ -22,8 +23,8 @@ func init() {
 }
 
 type Cat struct {
-	Name    string `toml:"naym"`
-	Clever  bool   `toml:"ayy"`
+	Name   string `toml:"naym"`
+	Clever bool   `toml:"ayy"`
 }
 
 type Hotel struct {
@@ -36,7 +37,9 @@ type Hotel struct {
 
 func main() {
 	var hotel Hotel
-	err := store.Load("hotel.toml", &settings)
+	var err error
+
+	err = store.Load("hotel.toml", &hotel)
 	if err != nil {
 		log.Println("failed to load the cat hotel:", err)
 		return
@@ -44,7 +47,7 @@ func main() {
 
 	// ...
 
-	err := store.Save("hotel.toml", &settings)
+	err = store.Save("hotel.toml", &hotel)
 	if err != nil {
 		log.Println("failed to save the cat hotel:", err)
 		return
