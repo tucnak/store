@@ -5,10 +5,6 @@ import (
 	"testing"
 )
 
-func init() {
-	SetApplicationName("store_test")
-}
-
 type Cat struct {
 	Name string
 	Big  bool
@@ -43,6 +39,8 @@ func equal(a, b Settings) bool {
 }
 
 func TestSaveLoad(t *testing.T) {
+	Init("store_test")
+
 	settings := Settings{
 		Age: 42,
 		Cats: []Cat{

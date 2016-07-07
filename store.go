@@ -5,35 +5,108 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/BurntSushi/toml"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"strings"
+
+	"github.com/BurntSushi/toml"
+	"github.com/go-yaml/yaml"
 )
 
-var applicationName string
+// MarshalFunc is any marshaler.
+type MarshalFunc func(v interface{}) ([]byte, error)
 
-// SetApplicationName defines a unique application handle for file system.
-//
-// By default, Store puts all your config data to %APPDATA%/<appname> on Windows
-// and to $XDG_CONFIG_HOME or $HOME on *unix systems.
-//
-// Warning: Store would panic on any sensitive calls if it's not set.
-func SetApplicationName(handle string) {
-	applicationName = handle
+// UnmarshalFunc is any unmarshaler.
+type UnmarshalFunc func(data []byte, v interface{}) error
+
+var (
+	applicationName = ""
+	formats         = map[string]format{}
+)
+
+type format struct {
+	m  MarshalFunc
+	um UnmarshalFunc
 }
 
-// Load reads a configuration from `path` and puts it into `v` pointer.
+func init() {
+	formats["json"] = format{m: json.Marshal, um: json.Unmarshal}
+	formats["yaml"] = format{m: yaml.Marshal, um: yaml.Unmarshal}
+	formats["yml"] = format{m: yaml.Marshal, um: yaml.Unmarshal}
+
+	formats["toml"] = format{
+		m: func(v interface{}) ([]byte, error) {
+			b := bytes.Buffer{}
+			err := toml.NewEncoder(&b).Encode(v)
+			return b.Bytes(), err
+		},
+		um: toml.Unmarshal,
+	}
+}
+
+// Init sets up a unique application name that will be used for name of the
+// configuration directory on the file system. By default, Store puts all the
+// config data to to $XDG_CONFIG_HOME or $HOME on Linux systems
+// and to %APPDATA% on Windows.
 //
-// Path is a full filename, with extension. Since Store currently support
-// TOML and JSON only, passing others would result in a corresponding error.
+// Beware: Store will panic on any sensitive calls unless you run Init inb4.
+func Init(application string) {
+	applicationName = application
+}
+
+// Register is the way you register configuration formats, by mapping some
+// file name extension to corresponding marshal and unmarshal functions.
+// Once registered, the format given would be compatible with Load and Save.
+func Register(extension string, m MarshalFunc, um UnmarshalFunc) {
+	formats[extension] = format{m, um}
+}
+
+// Load reads a configuration from `path` and puts it into `v` pointer. Store
+// supports either JSON, TOML or YAML and will deduce the file format out of
+// the filename (.json/.toml/.yaml). For other formats of custom extensions
+// please you LoadWith.
 //
+// Path is a full filename, including the file extension, e.g. "foobar.json".
 // If `path` doesn't exist, Load will create one and emptify `v` pointer by
 // replacing it with a newly created object, derived from type of `v`.
+//
+// Load panics on unknown configuration formats.
 func Load(path string, v interface{}) error {
+	if applicationName == "" {
+		panic("store: application name not defined")
+	}
+
+	if format, ok := formats[extension(path)]; ok {
+		return LoadWith(path, v, format.um)
+	}
+
+	panic("store: unknown configuration format")
+}
+
+// Save puts a configuration from `v` pointer into a file `path`. Store
+// supports either JSON, TOML or YAML and will deduce the file format out of
+// the filename (.json/.toml/.yaml). For other formats of custom extensions
+// please you LoadWith.
+//
+// Path is a full filename, including the file extension, e.g. "foobar.json".
+//
+// Save panics on unknown configuration formats.
+func Save(path string, v interface{}) error {
+	if applicationName == "" {
+		panic("store: application name not defined")
+	}
+
+	if format, ok := formats[extension(path)]; ok {
+		return SaveWith(path, v, format.m)
+	}
+
+	panic("store: unknown configuration format")
+}
+
+// LoadWith loads the configuration using any unmarshaler at all.
+func LoadWith(path string, v interface{}, um UnmarshalFunc) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
 	}
@@ -48,7 +121,7 @@ func Load(path string, v interface{}) error {
 		// to create an empty configuration file, based on v.
 		empty := reflect.New(reflect.TypeOf(v))
 		if innerErr := Save(path, &empty); innerErr != nil {
-			// Must be smth with file system... returning error from read.
+			// Smth going on with the file system... returning error.
 			return err
 		}
 
@@ -57,48 +130,25 @@ func Load(path string, v interface{}) error {
 		return nil
 	}
 
-	contents := string(data)
-	if strings.HasSuffix(path, ".toml") {
-		if _, err := toml.Decode(contents, v); err != nil {
-			return err
-		}
-	} else if strings.HasSuffix(path, ".json") {
-		if err := json.Unmarshal(data, v); err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("store: unknown configuration format")
+	if err := um(data, v); err != nil {
+		return fmt.Errorf("store: failed to unmarshal %s: %v", path, err)
 	}
 
 	return nil
 }
 
-// Save puts a configuration from `v` pointer into a file `path`.
-//
-// Path is a full filename, with extension. Since Store currently support
-// TOML and JSON only, passing others would result in a corresponding error.
-func Save(path string, v interface{}) error {
+// SaveWith saves the configuration using any marshaler at all.
+func SaveWith(path string, v interface{}, m MarshalFunc) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
 	}
 
 	var b bytes.Buffer
 
-	if strings.HasSuffix(path, ".toml") {
-		encoder := toml.NewEncoder(&b)
-		if err := encoder.Encode(v); err != nil {
-			return nil
-		}
-
-	} else if strings.HasSuffix(path, ".json") {
-		fileData, err := json.Marshal(v)
-		if err != nil {
-			return err
-		}
-
-		b.Write(fileData)
+	if data, err := m(v); err == nil {
+		b.Write(data)
 	} else {
-		return fmt.Errorf("unknown configuration format")
+		return fmt.Errorf("store: failed to marshal %s: %v", path, err)
 	}
 
 	b.WriteRune('\n')
@@ -113,6 +163,16 @@ func Save(path string, v interface{}) error {
 	}
 
 	return nil
+}
+
+func extension(path string) string {
+	for i := len(path) - 1; i >= 0; i-- {
+		if path[i] == '.' {
+			return path[i+1:]
+		}
+	}
+
+	return ""
 }
 
 // buildPlatformPath builds a platform-dependent path for relative path given.
@@ -133,4 +193,9 @@ func buildPlatformPath(path string) string {
 	return fmt.Sprintf("%s/%s/%s", unixConfigDir,
 		applicationName,
 		path)
+}
+
+// SetApplicationName is DEPRECATED (use Init instead).
+func SetApplicationName(handle string) {
+	applicationName = handle
 }
