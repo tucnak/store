@@ -37,18 +37,15 @@ type Hotel struct {
 
 func main() {
 	var hotel Hotel
-	var err error
 
-	err = store.Load("hotel.toml", &hotel)
-	if err != nil {
+	if err := store.Load("hotel.toml", &hotel); err != nil {
 		log.Println("failed to load the cat hotel:", err)
 		return
 	}
 
 	// ...
 
-	err = store.Save("hotel.toml", &hotel)
-	if err != nil {
+	if err := store.Save("hotel.toml", &hotel); err != nil {
 		log.Println("failed to save the cat hotel:", err)
 		return
 	}
