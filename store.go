@@ -12,7 +12,7 @@ import (
 	"runtime"
 
 	"github.com/BurntSushi/toml"
-	"github.com/go-yaml/yaml"
+	"gopkg.in/yaml.v2"
 )
 
 // MarshalFunc is any marshaler.
