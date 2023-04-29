@@ -44,9 +44,9 @@ func TestSaveLoad(t *testing.T) {
 	settings := Settings{
 		Age: 42,
 		Cats: []Cat{
-			Cat{"Rudolph", true},
-			Cat{"Patrick", false},
-			Cat{"Jeremy", true},
+			{"Rudolph", true},
+			{"Patrick", false},
+			{"Jeremy", true},
 		},
 		RandomString: "gophers are gonna conquer the world",
 	}
@@ -59,7 +59,7 @@ func TestSaveLoad(t *testing.T) {
 		return
 	}
 
-	defer os.Remove(buildPlatformPath(settingsFile))
+	defer os.RemoveAll(GetApplicationDirPath())
 
 	var newSettings Settings
 

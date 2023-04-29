@@ -16,10 +16,10 @@ import (
 )
 
 // MarshalFunc is any marshaler.
-type MarshalFunc func(v interface{}) ([]byte, error)
+type MarshalFunc func(v any) ([]byte, error)
 
 // UnmarshalFunc is any unmarshaler.
-type UnmarshalFunc func(data []byte, v interface{}) error
+type UnmarshalFunc func(data []byte, v any) error
 
 var (
 	applicationName = ""
@@ -37,7 +37,7 @@ func init() {
 	formats["yml"] = format{m: yaml.Marshal, um: yaml.Unmarshal}
 
 	formats["toml"] = format{
-		m: func(v interface{}) ([]byte, error) {
+		m: func(v any) ([]byte, error) {
 			b := bytes.Buffer{}
 			err := toml.NewEncoder(&b).Encode(v)
 			return b.Bytes(), err
@@ -73,7 +73,7 @@ func Register(extension string, m MarshalFunc, um UnmarshalFunc) {
 // replacing it with a newly created object, derived from type of `v`.
 //
 // Load panics on unknown configuration formats.
-func Load(path string, v interface{}) error {
+func Load(path string, v any) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
 	}
@@ -93,7 +93,7 @@ func Load(path string, v interface{}) error {
 // Path is a full filename, including the file extension, e.g. "foobar.json".
 //
 // Save panics on unknown configuration formats.
-func Save(path string, v interface{}) error {
+func Save(path string, v any) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
 	}
@@ -106,7 +106,7 @@ func Save(path string, v interface{}) error {
 }
 
 // LoadWith loads the configuration using any unmarshaler at all.
-func LoadWith(path string, v interface{}, um UnmarshalFunc) error {
+func LoadWith(path string, v any, um UnmarshalFunc) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
 	}
@@ -122,7 +122,7 @@ func LoadWith(path string, v interface{}, um UnmarshalFunc) error {
 		empty := reflect.New(reflect.TypeOf(v))
 		if innerErr := Save(path, &empty); innerErr != nil {
 			// Smth going on with the file system... returning error.
-			return err
+			return innerErr
 		}
 
 		v = empty
@@ -138,7 +138,7 @@ func LoadWith(path string, v interface{}, um UnmarshalFunc) error {
 }
 
 // SaveWith saves the configuration using any marshaler at all.
-func SaveWith(path string, v interface{}, m MarshalFunc) error {
+func SaveWith(path string, v any, m MarshalFunc) error {
 	if applicationName == "" {
 		panic("store: application name not defined")
 	}
@@ -175,27 +175,44 @@ func extension(path string) string {
 	return ""
 }
 
-// buildPlatformPath builds a platform-dependent path for relative path given.
-func buildPlatformPath(path string) string {
-	if runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s\\%s\\%s", os.Getenv("APPDATA"),
-			applicationName,
-			path)
-	}
-
-	var unixConfigDir string
-	if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
-		unixConfigDir = xdg
-	} else {
-		unixConfigDir = os.Getenv("HOME") + "/.config"
-	}
-
-	return fmt.Sprintf("%s/%s/%s", unixConfigDir,
-		applicationName,
-		path)
+func getApplicationDirPath(envPath, sep string) string {
+	return fmt.Sprintf("%s%s%s", envPath, sep, applicationName)
 }
 
-// SetApplicationName is DEPRECATED (use Init instead).
-func SetApplicationName(handle string) {
-	applicationName = handle
+// GetApplicationDirPath returns the platform specific path to
+// the application specific configuration directory.
+func GetApplicationDirPath() string {
+	if applicationName == "" {
+		panic("store: application name not defined")
+	}
+	envPath, sep := getPlatformPathAndSep()
+	return getApplicationDirPath(envPath, sep)
+}
+
+func getPlatformPathAndSep() (string, string) {
+	sep := "/"
+	var envPath string
+	if runtime.GOOS == "windows" {
+		sep = "\\"
+		envPath = os.Getenv("APPDATA")
+	} else if xdg := os.Getenv("XDG_CONFIG_HOME"); xdg != "" {
+		envPath = xdg
+	} else {
+		envPath = os.Getenv("HOME") + "/.config"
+	}
+	return envPath, sep
+}
+
+// buildPlatformPath builds a platform-dependent path for the given relative path.
+func buildPlatformPath(path string) string {
+	envPath, sep := getPlatformPathAndSep()
+	applicationDir := getApplicationDirPath(envPath, sep)
+	return fmt.Sprintf("%s%s%s", applicationDir, sep, path)
+}
+
+func pathExists(path string) bool {
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		return true
+	}
+	return false
 }
