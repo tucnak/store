@@ -209,10 +209,3 @@ func buildPlatformPath(path string) string {
 	applicationDir := getApplicationDirPath(envPath, sep)
 	return fmt.Sprintf("%s%s%s", applicationDir, sep, path)
 }
-
-func pathExists(path string) bool {
-	if _, err := os.Stat(path); !os.IsNotExist(err) {
-		return true
-	}
-	return false
-}
