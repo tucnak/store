@@ -1,4 +1,4 @@
-module github.com/tucnak/store
+module github.com/karanveersp/store
 
 go 1.20
 

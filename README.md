@@ -1,7 +1,7 @@
 # Store
 >Store is a dead simple configuration manager for Go applications.
 
-[![GoDoc](https://godoc.org/github.com/tucnak/store?status.svg)](https://godoc.org/github.com/tucnak/store)
+[![GoDoc](https://godoc.org/github.com/karanveersp/store?status.svg)](https://godoc.org/github.com/karanveersp/store)
 
 I didn't like existing configuration management solutions like [globalconf](https://github.com/rakyll/globalconf), [tachyon](https://github.com/vektra/tachyon) or [viper](https://github.com/spf13/viper). First two just don't feel right and viper, imo, a little overcomplicated—definitely offering too much for small things. Store supports either JSON, TOML or YAML out-of-the-box and lets you register practically any other configuration format. It persists all of your configurations in either $XDG_CONFIG_HOME or $HOME on Linux and in %APPDATA%
 on Windows.
@@ -14,7 +14,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/tucnak/store"
+	"github.com/karanveersp/store"
 )
 
 func init() {
