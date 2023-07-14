@@ -1,6 +1,10 @@
 # Store
 >Store is a dead simple configuration manager for Go applications.
 
+NOTE:
+This fork is maintained by `karanveersp` and includes a bugfix, some extra comments, and a new public function to get the config directory path. This is an updated version of the library made available at [github.com/tucnak/store](https://github.com/tucnak/store). If and when my pull request is merged into the original repo, it is recommended you use that instead of my fork.
+
+
 [![GoDoc](https://godoc.org/github.com/karanveersp/store?status.svg)](https://godoc.org/github.com/karanveersp/store)
 
 I didn't like existing configuration management solutions like [globalconf](https://github.com/rakyll/globalconf), [tachyon](https://github.com/vektra/tachyon) or [viper](https://github.com/spf13/viper). First two just don't feel right and viper, imo, a little overcomplicated—definitely offering too much for small things. Store supports either JSON, TOML or YAML out-of-the-box and lets you register practically any other configuration format. It persists all of your configurations in either $XDG_CONFIG_HOME or $HOME on Linux and in %APPDATA%
